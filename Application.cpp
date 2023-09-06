@@ -12,6 +12,13 @@ using namespace std;
 using namespace std::filesystem;
 using namespace Genio::Task;
 
+const int int_test = 2023;
+const double double_test = 20.23;
+const BString string_test("test value");
+const BString path_test("/boot/home/workspace/GenioTask");
+const BString exception_test("This is an exception!");
+const bool bool_test = true;
+
 struct test_struct {
 	string str;
 	int32 val;
@@ -21,56 +28,68 @@ struct test_struct {
 test_struct TaskFunction_test_struct()
 {
 	cout << "TaskFunction_test_struct()" << endl; 
-	return test_struct("test value", 1978);
+	return test_struct(string_test.String(), int_test);
 }
 
 auto TaskFunction_SharedPtr()
 {
 	cout << "TaskFunction_SharedPtr()" << endl; 
-	return make_shared<test_struct>("test val", 1978);
+	return make_shared<test_struct>(string_test.String(), int_test);
 }
 
 auto TaskFunction_std_path()
 {
 	cout << "TaskFunction_path()" << endl; 
-	return path("/boot/home/workspace/Weather");
+	return path(path_test.String());
 }
 
 BPath TaskFunction_bpath()
 {
-	cout << "TaskFunction_path()" << endl; 
-	return BPath("/boot/home/workspace/Weather");
+	cout << "TaskFunction_bpath()" << endl; 
+	return BPath(path_test);
 }
 
 bool TaskFunction_bool()
 {
 	cout << "TaskFunction_bool()" << endl; 
-	return true;
+	return bool_test;
 }
 
 int32 TaskFunction_int32()
 {
 	cout << "TaskFunction_int32()" << endl; 
-	return 1978;
+	return int_test;
 }
 
 double TaskFunction_double()
 {
 	cout << "TaskFunction_double()" << endl; 
-	return 19.78;
+	return double_test;
 }
 
 BString TaskFunction_BString()
 {
 	cout << "TaskFunction_BString()" << endl; 
-	return "Test passed!";
+	return string_test;
 }
 
 test_struct* TaskFunction_Pointer()
 {
-	cout << "TaskFunction_double()" << endl; 
-	auto pointer = new test_struct("test", 15);
+	cout << "TaskFunction_Pointer()" << endl; 
+	auto pointer = new test_struct(string_test.String(), int_test);
 	return pointer;
+}
+
+void TaskFunction_void()
+{
+	cout << "TaskFunction_void()" << endl; 
+}
+
+int32 TaskFunction_int_exception()
+{
+	cout << "TaskFunction_int32()" << endl;
+	throw runtime_error(exception_test.String());
+	return int_test;
 }
 
 MainApp::MainApp()
@@ -112,6 +131,12 @@ void MainApp::ReadyToRun() {
 	Task<BPath> task9("test_bpath", new BMessenger(this), &TaskFunction_bpath);
 	task9.Run();
 	
+	Task<BPath> task10("test_void", new BMessenger(this), &TaskFunction_void);
+	task10.Run();
+	
+	Task<BPath> task11("test_int_exception", new BMessenger(this), &TaskFunction_int_exception);
+	task11.Run();
+	
 }
 
 void MainApp::MessageReceived(BMessage* msg) {
@@ -123,7 +148,7 @@ void MainApp::MessageReceived(BMessage* msg) {
 			try {
 				auto task_name = BString(msg->GetString("TaskResult::TaskName"));
 				
-				// this test fails due to bad alloc exception
+				// this test always fails due to bad alloc exception
 				if (task_name=="test_path") {
 					auto task_result = TaskResult<std::filesystem::path>::Instantiate(msg);
 					auto result = task_result->GetResult();
@@ -131,6 +156,10 @@ void MainApp::MessageReceived(BMessage* msg) {
 					cout << task_name << " - ID: " << task_result->GetTaskID() << endl;
 					cout << task_name << " - Type: " << "Type:" << typeid(result).name() << endl;
 					cout << task_name << " - Result: " << result.c_str() << endl;
+					if (result.c_str() == path_test.String())
+						cout << "Test passed!" << endl;
+					else
+						cout << "Test failed!" << endl;
 				}
 				if (task_name=="test_bpath") {
 					auto task_result = TaskResult<BPath>::Instantiate(msg);
@@ -139,6 +168,10 @@ void MainApp::MessageReceived(BMessage* msg) {
 					cout << task_name << " - ID: " << task_result->GetTaskID() << endl;
 					cout << task_name << " - Type: " << "Type:" << typeid(result).name() << endl;
 					cout << task_name << " - Result: " << result.Path() << endl;
+					if (result.Path() == path_test)
+						cout << "Test passed!" << endl;
+					else
+						cout << "Test failed!" << endl;
 				}
 				if (task_name=="test_struct") {
 					auto task_result = TaskResult<test_struct>::Instantiate(msg);
@@ -147,6 +180,10 @@ void MainApp::MessageReceived(BMessage* msg) {
 					cout << task_name << " - ID: " << task_result->GetTaskID() << endl;
 					cout << task_name << " - Type: " << "Type:" << typeid(result).name() << endl;
 					cout << task_name << " - Result: " << " {str: " << result.str << " val: " << result.val << "}" << endl;
+					if (BString(result.str.c_str()) == string_test && result.val == int_test)
+						cout << "Test passed!" << endl;
+					else
+						cout << "Test failed!" << endl;
 				}
 				if (task_name=="test_shared_ptr") {
 					auto task_result = TaskResult<shared_ptr<test_struct>>::Instantiate(msg);
@@ -154,7 +191,11 @@ void MainApp::MessageReceived(BMessage* msg) {
 					cout << task_name << " - Name: " << task_result->GetTaskName() << endl;
 					cout << task_name << " - ID: " << task_result->GetTaskID() << endl;
 					cout << task_name << " - Type: " << "Type:" << typeid(result).name() << endl;
-					cout << task_name << " - Result: " << "result => str: " << result->str << " val: " << result->val << endl;
+					cout << task_name << " - Result: " << " {str: " << result->str << " val: " << result->val << "}" << endl;
+					if (BString(result->str.c_str()) == string_test && result->val == int_test)
+						cout << "Test passed!" << endl;
+					else
+						cout << "Test failed!" << endl;
 				}
 				if (task_name=="test_bool") {
 					auto task_result = TaskResult<bool>::Instantiate(msg);
@@ -163,6 +204,10 @@ void MainApp::MessageReceived(BMessage* msg) {
 					cout << task_name << " - ID: " << task_result->GetTaskID() << endl;
 					cout << task_name << " - Type: " << "Type:" << typeid(result).name() << endl;
 					cout << task_name << " - Result: " << "result: " << result << endl;
+					if (result == bool_test)
+						cout << "Test passed!" << endl;
+					else
+						cout << "Test failed!" << endl;
 				}
 				if (task_name=="test_int32") {
 					auto task_result = TaskResult<int32>::Instantiate(msg);
@@ -171,6 +216,10 @@ void MainApp::MessageReceived(BMessage* msg) {
 					cout << task_name << " - ID: " << task_result->GetTaskID() << endl;
 					cout << task_name << " - Type: " << "Type:" << typeid(result).name() << endl;
 					cout << task_name << " - Result: " << "result: " << result << endl;
+					if (result == int_test)
+						cout << "Test passed!" << endl;
+					else
+						cout << "Test failed!" << endl;
 				}
 				if (task_name=="test_double") {
 					auto task_result = TaskResult<double>::Instantiate(msg);
@@ -179,6 +228,10 @@ void MainApp::MessageReceived(BMessage* msg) {
 					cout << task_name << " - ID: " << task_result->GetTaskID() << endl;
 					cout << task_name << " - Type: " << "Type:" << typeid(result).name() << endl;
 					cout << task_name << " - Result: " << "result: " << result << endl;
+					if (result == double_test)
+						cout << "Test passed!" << endl;
+					else
+						cout << "Test failed!" << endl;
 				}
 				if (task_name=="test_bstring") {
 					auto task_result = TaskResult<BString>::Instantiate(msg);
@@ -187,6 +240,10 @@ void MainApp::MessageReceived(BMessage* msg) {
 					cout << task_name << " - ID: " << task_result->GetTaskID() << endl;
 					cout << task_name << " - Type: " << "Type:" << typeid(result).name() << endl;
 					cout << task_name << " - Result: " << result << endl;
+					if (result == string_test)
+						cout << "Test passed!" << endl;
+					else
+						cout << "Test failed!" << endl;
 				}
 				if (task_name=="test_pointer") {
 					auto task_result = TaskResult<test_struct*>::Instantiate(msg);
@@ -195,7 +252,40 @@ void MainApp::MessageReceived(BMessage* msg) {
 					cout << task_name << " (test_struct*) - ID: " << task_result->GetTaskID() << endl;
 					cout << task_name << " (test_struct*) - Type: " << "Type:" << typeid(result).name() << endl;
 					cout << task_name << " (test_struct*) - result: " << " {str: " << result->str << " val: " << result->val << "}" << endl;
+					if (BString(result->str.c_str()) == string_test && result->val == int_test)
+						cout << "Test passed!" << endl;
+					else
+						cout << "Test failed!" << endl;
 					delete result;
+				}
+				if (task_name=="test_void") {
+					auto task_result = TaskResult<void>::Instantiate(msg);
+					// we can't get any result from a function returning void
+					// we just get confirmation that the task is complete if it does not raise an exception
+					task_result->GetResult();
+					cout << task_name << " (test_struct*) - Name: " << task_result->GetTaskName() << endl;
+					cout << task_name << " (test_struct*) - ID: " << task_result->GetTaskID() << endl;
+					cout << task_name << " (test_struct*) - Type: " << "Type:" << "void" << endl;
+					cout << task_name << " (test_struct*) - result: " << " N/A" << endl;
+					cout << "Test passed!" << endl;
+				}
+				if (task_name=="test_int_exception") {
+					auto task_result = TaskResult<int32>::Instantiate(msg);
+					cout << task_name << " - Name: " << task_result->GetTaskName() << endl;
+					cout << task_name << " - ID: " << task_result->GetTaskID() << endl;
+					try {
+						auto result = task_result->GetResult();
+						cout << task_name << " - Type: " << "Type:" << typeid(result).name() << endl;
+						cout << task_name << " - Result: " << "result: " << result << endl;
+						// if we get here no exception has been raised and the test failed
+						cout << "Test failed!" << endl;
+					} catch (std::exception &ex) {
+						cout << "exception: " << ex.what() << endl;
+						if (BString(ex.what()) == exception_test)
+							cout << "Test passed!" << endl;
+						else
+							cout << "Test failed!" << endl;
+					}
 				}
 								
 			} catch(std::exception &ex) {
