@@ -110,14 +110,9 @@ void MainApp::ReadyToRun() {
 #if 0
 	Task<shared_ptr<test_struct>> task2("test_shared_ptr", BMessenger(this), TaskFunction_SharedPtr);
 	task2.Run();
-<<<<<<< Updated upstream
 #endif
 #if 0
-	Task<std::filesystem::path> task3("test_path", BMessenger(this), &TaskFunction_std_path);
-=======
-
 	Task<std::filesystem::path *> task3("test_path", new BMessenger(this), &TaskFunction_std_path);
->>>>>>> Stashed changes
 	task3.Run();
 #endif
 	Task<bool> task4("test_bool", BMessenger(this), &TaskFunction_bool);
