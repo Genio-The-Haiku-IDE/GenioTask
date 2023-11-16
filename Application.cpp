@@ -103,16 +103,16 @@ MainApp::~MainApp()
 
 void MainApp::ReadyToRun() {
 	cout << "ReadyToRun()" << endl;
-#if 0
+#if 1
 	Task<test_struct> task1("test_struct", BMessenger(this), TaskFunction_test_struct);
 	task1.Run();
 #endif
-#if 0
+#if 1
 	Task<shared_ptr<test_struct>> task2("test_shared_ptr", BMessenger(this), TaskFunction_SharedPtr);
 	task2.Run();
 #endif
-#if 0
-	Task<std::filesystem::path *> task3("test_path", new BMessenger(this), &TaskFunction_std_path);
+#if 1
+	Task<std::filesystem::path *> task3("test_path", BMessenger(this), &TaskFunction_std_path);
 	task3.Run();
 #endif
 	Task<bool> task4("test_bool", BMessenger(this), &TaskFunction_bool);
