@@ -74,10 +74,15 @@ namespace Genio::Task {
 	template <typename ResultType>
 	class TaskResult: public BArchivable {
 	public:
+
+		TaskResult() {}
+
 		TaskResult(const BMessage &archive)
 			: fResult(nullptr)
 		{
 			type_code type;
+			void *result;
+
 			if constexpr (std::is_void<ResultType>::value == false) {
 				if (archive.GetInfo(fResultField, &type) == B_OK) {
 					ssize_t size = 0;
@@ -102,8 +107,12 @@ namespace Genio::Task {
 
 		ResultType	GetResult() const
 		{
-			auto ptr = TaskExceptionMap[fId];
-			if (ptr) {
+			// auto ptr = TaskExceptionMap[fId];
+			// if (ptr) {
+			auto i = TaskExceptionMap.find(fId);
+			if (i != TaskExceptionMap.end()) {
+				auto ptr = move(i->second);
+				TaskExceptionMap.erase(i);
 				rethrow_exception(ptr);
 			} else {
 				if constexpr (std::is_void<ResultType>::value == false) {
@@ -117,6 +126,7 @@ namespace Genio::Task {
 			status_t status = BArchivable::Archive(archive, deep);
 			if (status != B_OK)
 				return status;
+
 			if constexpr (std::is_void<ResultType>::value == false) {
 				if (fResult.has_value()) {
 					type_code type = BMessageType<ResultType>::Get();
@@ -157,8 +167,6 @@ namespace Genio::Task {
 		any				fResult;
 		thread_id		fId;
 		BString			fName;
-
-						TaskResult() {}
 	};
 
 
@@ -170,7 +178,7 @@ namespace Genio::Task {
 		template<typename Function, typename... Args>
 		Task(const char *name, const BMessenger& messenger, Function&& function, Args&&... args)
 		{
-			auto *target_function =
+			auto target_function =
 				new arguments_wrapper<Function, Args...>(std::forward<Function>(function),
 				std::forward<Args>(args)...);
 
@@ -211,7 +219,7 @@ namespace Genio::Task {
 		template<typename Data, typename Lambda>
 		static int32 _CallTarget(void *target)
 		{
-			TaskResult<ResultType> task_result;
+			auto task_result = make_shared<TaskResult<ResultType>>();
 			BMessage msg(TASK_RESULT_MESSAGE);
 			Data *data;
 			Lambda *lambda;
@@ -220,8 +228,8 @@ namespace Genio::Task {
 				data = reinterpret_cast<Data*>(target);
 				lambda = reinterpret_cast<Lambda*>(data->target_function);
 				messenger = data->messenger;
-				task_result.fId = data->id;
-				task_result.fName = data->name;
+				task_result->fId = data->id;
+				task_result->fName = data->name;
 
 				using ret_t = decltype((*lambda)());
 
@@ -229,16 +237,17 @@ namespace Genio::Task {
 					(*lambda)();
 				} else {
 					auto result = (*lambda)();
-					task_result.fResult = result;
+					task_result->fResult = result;
 				}
 			} catch(...) {
-				TaskExceptionMap[task_result.fId] = current_exception();
+				TaskExceptionMap[task_result->fId] = current_exception();
 			}
 
 			delete lambda;
 			delete data;
 
-			if (task_result.Archive(&msg, false) == B_OK) {
+			if (task_result->Archive(&msg, false) == B_OK)
+			{
 				if (messenger.IsValid()) {
 					messenger.SendMessage(&msg);
 				}

@@ -27,62 +27,62 @@ struct test_struct {
 
 test_struct TaskFunction_test_struct()
 {
-	cout << "TaskFunction_test_struct()" << endl; 
+	cout << "TaskFunction_test_struct()" << endl;
 	return test_struct(string_test.String(), int_test);
 }
 
 auto TaskFunction_SharedPtr()
 {
-	cout << "TaskFunction_SharedPtr()" << endl; 
+	cout << "TaskFunction_SharedPtr()" << endl;
 	return make_shared<test_struct>(string_test.String(), int_test);
 }
 
 auto TaskFunction_std_path()
 {
-	cout << "TaskFunction_path()" << endl; 
-	return path(path_test.String());
+	cout << "TaskFunction_path()" << endl;
+	return new path(path_test.String());
 }
 
 BPath TaskFunction_bpath()
 {
-	cout << "TaskFunction_bpath()" << endl; 
+	cout << "TaskFunction_bpath()" << endl;
 	return BPath(path_test);
 }
 
 bool TaskFunction_bool()
 {
-	cout << "TaskFunction_bool()" << endl; 
+	cout << "TaskFunction_bool()" << endl;
 	return bool_test;
 }
 
 int32 TaskFunction_int32()
 {
-	cout << "TaskFunction_int32()" << endl; 
+	cout << "TaskFunction_int32()" << endl;
 	return int_test;
 }
 
 double TaskFunction_double()
 {
-	cout << "TaskFunction_double()" << endl; 
+	cout << "TaskFunction_double()" << endl;
 	return double_test;
 }
 
 BString TaskFunction_BString()
 {
-	cout << "TaskFunction_BString()" << endl; 
+	cout << "TaskFunction_BString()" << endl;
 	return string_test;
 }
 
 test_struct* TaskFunction_Pointer()
 {
-	cout << "TaskFunction_Pointer()" << endl; 
+	cout << "TaskFunction_Pointer()" << endl;
 	auto pointer = new test_struct(string_test.String(), int_test);
 	return pointer;
 }
 
 void TaskFunction_void()
 {
-	cout << "TaskFunction_void()" << endl; 
+	cout << "TaskFunction_void()" << endl;
 }
 
 int32 TaskFunction_int_exception()
@@ -102,19 +102,24 @@ MainApp::~MainApp()
 }
 
 void MainApp::ReadyToRun() {
-	cout << "ReadyToRun()" << endl; 
-#if 0	
+	cout << "ReadyToRun()" << endl;
+#if 0
 	Task<test_struct> task1("test_struct", BMessenger(this), TaskFunction_test_struct);
 	task1.Run();
 #endif
 #if 0
 	Task<shared_ptr<test_struct>> task2("test_shared_ptr", BMessenger(this), TaskFunction_SharedPtr);
 	task2.Run();
+<<<<<<< Updated upstream
 #endif
-#if 0		
+#if 0
 	Task<std::filesystem::path> task3("test_path", BMessenger(this), &TaskFunction_std_path);
+=======
+
+	Task<std::filesystem::path *> task3("test_path", new BMessenger(this), &TaskFunction_std_path);
+>>>>>>> Stashed changes
 	task3.Run();
-#endif	
+#endif
 	Task<bool> task4("test_bool", BMessenger(this), &TaskFunction_bool);
 	task4.Run();
 
@@ -135,10 +140,10 @@ void MainApp::ReadyToRun() {
 
 	Task<BPath> task10("test_void", BMessenger(this), &TaskFunction_void);
 	task10.Run();
-	
+
 	Task<BPath> task11("test_int_exception", BMessenger(this), &TaskFunction_int_exception);
 	task11.Run();
-	
+
 }
 
 void MainApp::MessageReceived(BMessage* msg) {
@@ -149,20 +154,21 @@ void MainApp::MessageReceived(BMessage* msg) {
 			msg->PrintToStream();
 			try {
 				auto task_name = BString(msg->GetString("TaskResult::TaskName"));
-				
+
 				// this test always fails due to bad alloc exception
 				if (task_name=="test_path") {
-					auto task_result = TaskResult<std::filesystem::path>::Instantiate(msg);
+					auto task_result = TaskResult<std::filesystem::path*>::Instantiate(msg);
 					auto result = task_result->GetResult();
 					cout << task_name << " - Name: " << task_result->GetTaskName() << endl;
 					cout << task_name << " - ID: " << task_result->GetTaskID() << endl;
 					cout << task_name << " - Type: " << "Type:" << typeid(result).name() << endl;
-					cout << task_name << " - Result: " << result.c_str() << endl;
-					if (result.c_str() == path_test.String())
+					cout << task_name << " - Result: " << result->c_str() << endl;
+					if (BString(result->c_str()) == path_test.String())
 						cout << "Test passed!" << endl;
 					else
 						cout << "Test failed!" << endl;
 					delete task_result;
+					delete result;
 				}
 				if (task_name=="test_bpath") {
 					auto task_result = TaskResult<BPath>::Instantiate(msg);
@@ -286,6 +292,7 @@ void MainApp::MessageReceived(BMessage* msg) {
 					cout << task_name << " - Name: " << task_result->GetTaskName() << endl;
 					cout << task_name << " - ID: " << task_result->GetTaskID() << endl;
 					try {
+						cout << "Exception map size (before GetResult()): " << Genio::Task::Private::TaskExceptionMap.size() << endl;
 						auto result = task_result->GetResult();
 						cout << task_name << " - Type: " << "Type:" << typeid(result).name() << endl;
 						cout << task_name << " - Result: " << "result: " << result << endl;
@@ -297,10 +304,11 @@ void MainApp::MessageReceived(BMessage* msg) {
 							cout << "Test passed!" << endl;
 						else
 							cout << "Test failed!" << endl;
+						cout << "Exception map size (after GetResult()): " << Genio::Task::Private::TaskExceptionMap.size() << endl;
 					}
 					delete task_result;
 				}
-								
+
 			} catch(std::exception &ex) {
 				cout << "exception: " << ex.what() << endl;
 			}
