@@ -22,6 +22,11 @@ namespace Genio::Task {
 	namespace Private {
 
 		struct ThreadData {
+			ThreadData(void* function, const BMessenger& srcMessenger, const BString& taskName) {
+				target_function = function;
+				messenger = srcMessenger;
+				name = taskName;
+			};
 			void *target_function;
 			BMessenger messenger;
 			thread_id id;
@@ -115,7 +120,7 @@ namespace Genio::Task {
 			// if (ptr) {
 			auto i = TaskExceptionMap.find(fId);
 			if (i != TaskExceptionMap.end()) {
-				auto ptr = move(i->second);
+				auto ptr = std::move(i->second);
 				TaskExceptionMap.erase(i);
 				rethrow_exception(ptr);
 			} else {
@@ -147,7 +152,6 @@ namespace Genio::Task {
 			if (status != B_OK)
 				return status;
 			status = archive->AddString("class", "TaskResult");
-			// archive->PrintToStream();
 			return status;
 		}
 
@@ -182,26 +186,23 @@ namespace Genio::Task {
 		template<typename Function, typename... Args>
 		Task(const char *name, const BMessenger& messenger, Function&& function, Args&&... args)
 		{
-			auto target_function =
+			auto targetFunction =
 				new arguments_wrapper<Function, Args...>(std::forward<Function>(function),
 				std::forward<Args>(args)...);
 
-			using lambda_type = std::remove_reference_t<decltype(*target_function)>;
+			using lambda_type = std::remove_reference_t<decltype(*targetFunction)>;
 
-			ThreadData *thread_data = new ThreadData;
-			thread_data->target_function = target_function;
-			thread_data->messenger = messenger;
-			thread_data->name = name;
+			ThreadData *threadData = new ThreadData(targetFunction, messenger, name);
 
 			fThreadHandle = spawn_thread(&_CallTarget<ThreadData, lambda_type>,
 										name,
 										B_NORMAL_PRIORITY,
-										thread_data);
+										threadData);
 
-			thread_data->id = fThreadHandle;
+			threadData->id = fThreadHandle;
 			if (fThreadHandle < 0) {
-				delete target_function;
-				delete thread_data;
+				delete targetFunction;
+				delete threadData;
 				throw runtime_error("Can't create task");
 			}
 		}
@@ -228,9 +229,6 @@ namespace Genio::Task {
 		{
 			Data *data = reinterpret_cast<Data*>(target);
 			Lambda* lambda = reinterpret_cast<Lambda*>(data->target_function);
-			BMessenger messenger = data->messenger;
-			thread_id id = data->id;
-			BString name = data->name;
 			std::any anyResult;
 			try {
 				using ret_t = decltype((*lambda)());
@@ -241,16 +239,18 @@ namespace Genio::Task {
 					auto result = (*lambda)();
 					anyResult = result;
 				}
-			} catch(...) {
-				TaskExceptionMap[id] = current_exception();
+			} catch (...) {
+				TaskExceptionMap[data->id] = current_exception();
 			}
+
+			TaskResult<ResultType> taskResult(data->name, anyResult, data->id);
+			BMessenger messenger = data->messenger;
 
 			delete lambda;
 			delete data;
 
-			TaskResult<ResultType> task_result(name, anyResult, id);
 			BMessage msg(TASK_RESULT_MESSAGE);
-			if (task_result.Archive(&msg, false) == B_OK) {
+			if (taskResult.Archive(&msg, false) == B_OK) {
 				if (messenger.IsValid()) {
 					messenger.SendMessage(&msg);
 				}
