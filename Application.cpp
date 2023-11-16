@@ -162,6 +162,7 @@ void MainApp::MessageReceived(BMessage* msg) {
 						cout << "Test passed!" << endl;
 					else
 						cout << "Test failed!" << endl;
+					delete task_result;
 				}
 				if (task_name=="test_bpath") {
 					auto task_result = TaskResult<BPath>::Instantiate(msg);
@@ -174,6 +175,7 @@ void MainApp::MessageReceived(BMessage* msg) {
 						cout << "Test passed!" << endl;
 					else
 						cout << "Test failed!" << endl;
+					delete task_result;
 				}
 				if (task_name=="test_struct") {
 					auto task_result = TaskResult<test_struct>::Instantiate(msg);
@@ -186,6 +188,7 @@ void MainApp::MessageReceived(BMessage* msg) {
 						cout << "Test passed!" << endl;
 					else
 						cout << "Test failed!" << endl;
+					delete task_result;
 				}
 				if (task_name=="test_shared_ptr") {
 					auto task_result = TaskResult<shared_ptr<test_struct>>::Instantiate(msg);
@@ -198,6 +201,7 @@ void MainApp::MessageReceived(BMessage* msg) {
 						cout << "Test passed!" << endl;
 					else
 						cout << "Test failed!" << endl;
+					delete task_result;
 				}
 				if (task_name=="test_bool") {
 					auto task_result = TaskResult<bool>::Instantiate(msg);
@@ -210,6 +214,7 @@ void MainApp::MessageReceived(BMessage* msg) {
 						cout << "Test passed!" << endl;
 					else
 						cout << "Test failed!" << endl;
+					delete task_result;
 				}
 				if (task_name=="test_int32") {
 					auto task_result = TaskResult<int32>::Instantiate(msg);
@@ -222,6 +227,7 @@ void MainApp::MessageReceived(BMessage* msg) {
 						cout << "Test passed!" << endl;
 					else
 						cout << "Test failed!" << endl;
+					delete task_result;
 				}
 				if (task_name=="test_double") {
 					auto task_result = TaskResult<double>::Instantiate(msg);
@@ -234,6 +240,7 @@ void MainApp::MessageReceived(BMessage* msg) {
 						cout << "Test passed!" << endl;
 					else
 						cout << "Test failed!" << endl;
+					delete task_result;
 				}
 				if (task_name=="test_bstring") {
 					auto task_result = TaskResult<BString>::Instantiate(msg);
@@ -246,6 +253,7 @@ void MainApp::MessageReceived(BMessage* msg) {
 						cout << "Test passed!" << endl;
 					else
 						cout << "Test failed!" << endl;
+					delete task_result;
 				}
 				if (task_name=="test_pointer") {
 					auto task_result = TaskResult<test_struct*>::Instantiate(msg);
@@ -259,6 +267,7 @@ void MainApp::MessageReceived(BMessage* msg) {
 					else
 						cout << "Test failed!" << endl;
 					delete result;
+					delete task_result;
 				}
 				if (task_name=="test_void") {
 					auto task_result = TaskResult<void>::Instantiate(msg);
@@ -270,6 +279,7 @@ void MainApp::MessageReceived(BMessage* msg) {
 					cout << task_name << " (test_struct*) - Type: " << "Type:" << "void" << endl;
 					cout << task_name << " (test_struct*) - result: " << " N/A" << endl;
 					cout << "Test passed!" << endl;
+					delete task_result;
 				}
 				if (task_name=="test_int_exception") {
 					auto task_result = TaskResult<int32>::Instantiate(msg);
@@ -288,6 +298,7 @@ void MainApp::MessageReceived(BMessage* msg) {
 						else
 							cout << "Test failed!" << endl;
 					}
+					delete task_result;
 				}
 								
 			} catch(std::exception &ex) {
