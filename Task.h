@@ -25,7 +25,7 @@ namespace Genio::Task {
 			void *target_function;
 			BMessenger messenger;
 			thread_id id;
-			const char *name;
+			BString name;
 		};
 
 		static exception_ptr current_exception_ptr;
