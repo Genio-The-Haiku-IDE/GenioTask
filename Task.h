@@ -156,7 +156,7 @@ namespace Genio::Task {
 
 		any				fResult;
 		thread_id		fId;
-		const char *	fName;
+		BString			fName;
 
 						TaskResult() {}
 	};
