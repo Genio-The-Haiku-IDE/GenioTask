@@ -74,16 +74,20 @@ namespace Genio::Task {
 	template <typename ResultType>
 	class TaskResult: public BArchivable {
 	public:
-
-		TaskResult() {}
-
+		TaskResult(const BString& name, std::any result, thread_id id)
+			:
+			fResult(result),
+			fId(id),
+			fName(name)
+		{
+		}
 		TaskResult(const BMessage &archive)
 			:
 			fResult(nullptr),
 			fId(-1)
 		{
-			type_code type;
 			if constexpr (std::is_void<ResultType>::value == false) {
+				type_code type;
 				if (archive.GetInfo(kResultField, &type) == B_OK) {
 					ssize_t size = 0;
 					const void *result;
@@ -158,7 +162,7 @@ namespace Genio::Task {
 		const char* GetTaskName() const { return fName; }
 
 	private:
-		friend class	Task<ResultType>;
+		TaskResult() { debugger("called TaskResult private constructor!"); };
 
 		const char*		kResultField = "TaskResult::Result";
 		const char*		kTaskIdField = "TaskResult::TaskID";
@@ -206,12 +210,15 @@ namespace Genio::Task {
 
 		status_t Run()
 		{
-			return resume_thread(fThreadHandle);
+			if (fThreadHandle > 0)
+				return resume_thread(fThreadHandle);
+			return B_ERROR;
 		}
-
 		status_t Stop()
 		{
-			return kill_thread(fThreadHandle);
+			if (fThreadHandle > 0)
+				return kill_thread(fThreadHandle);
+			return B_ERROR;
 		}
 	private:
 		native_handle_type fThreadHandle;
@@ -219,35 +226,31 @@ namespace Genio::Task {
 		template<typename Data, typename Lambda>
 		static int32 _CallTarget(void *target)
 		{
-			auto task_result = make_shared<TaskResult<ResultType>>();
-			BMessage msg(TASK_RESULT_MESSAGE);
-			Data *data;
-			Lambda *lambda;
-			BMessenger messenger;
+			Data *data = reinterpret_cast<Data*>(target);
+			Lambda* lambda = reinterpret_cast<Lambda*>(data->target_function);
+			BMessenger messenger = data->messenger;
+			thread_id id = data->id;
+			BString name = data->name;
+			std::any anyResult;
 			try {
-				data = reinterpret_cast<Data*>(target);
-				lambda = reinterpret_cast<Lambda*>(data->target_function);
-				messenger = data->messenger;
-				task_result->fId = data->id;
-				task_result->fName = data->name;
-
 				using ret_t = decltype((*lambda)());
-
 				if constexpr (std::is_same_v<void, ret_t>) {
 					(*lambda)();
+					// TODO: anyResult is not initialized here
 				} else {
 					auto result = (*lambda)();
-					task_result->fResult = result;
+					anyResult = result;
 				}
 			} catch(...) {
-				TaskExceptionMap[task_result->fId] = current_exception();
+				TaskExceptionMap[id] = current_exception();
 			}
 
 			delete lambda;
 			delete data;
 
-			if (task_result->Archive(&msg, false) == B_OK)
-			{
+			TaskResult<ResultType> task_result(name, anyResult, id);
+			BMessage msg(TASK_RESULT_MESSAGE);
+			if (task_result.Archive(&msg, false) == B_OK) {
 				if (messenger.IsValid()) {
 					messenger.SendMessage(&msg);
 				}
