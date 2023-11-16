@@ -103,38 +103,40 @@ MainApp::~MainApp()
 
 void MainApp::ReadyToRun() {
 	cout << "ReadyToRun()" << endl; 
-	
-	Task<test_struct> task1("test_struct", new BMessenger(this), TaskFunction_test_struct);
+#if 0	
+	Task<test_struct> task1("test_struct", BMessenger(this), TaskFunction_test_struct);
 	task1.Run();
-	// 
-	Task<shared_ptr<test_struct>> task2("test_shared_ptr", new BMessenger(this), TaskFunction_SharedPtr);
+#endif
+#if 0
+	Task<shared_ptr<test_struct>> task2("test_shared_ptr", BMessenger(this), TaskFunction_SharedPtr);
 	task2.Run();
-	
-	Task<std::filesystem::path> task3("test_path", new BMessenger(this), &TaskFunction_std_path);
+#endif
+#if 0		
+	Task<std::filesystem::path> task3("test_path", BMessenger(this), &TaskFunction_std_path);
 	task3.Run();
-	
-	Task<bool> task4("test_bool", new BMessenger(this), &TaskFunction_bool);
+#endif	
+	Task<bool> task4("test_bool", BMessenger(this), &TaskFunction_bool);
 	task4.Run();
-	
-	Task<int32> task5("test_int32", new BMessenger(this), TaskFunction_int32);
+
+	Task<int32> task5("test_int32", BMessenger(this), TaskFunction_int32);
 	task5.Run();
-	
-	Task<double> task6("test_double", new BMessenger(this), TaskFunction_double);
+
+	Task<double> task6("test_double", BMessenger(this), TaskFunction_double);
 	task6.Run();
-	
-	Task<BString> task7("test_bstring", new BMessenger(this), TaskFunction_BString);
+
+	Task<BString> task7("test_bstring", BMessenger(this), TaskFunction_BString);
 	task7.Run();
-	
-	Task<test_struct*> task8("test_pointer", new BMessenger(this), TaskFunction_Pointer);
+
+	Task<test_struct*> task8("test_pointer", BMessenger(this), TaskFunction_Pointer);
 	task8.Run();
-	
-	Task<BPath> task9("test_bpath", new BMessenger(this), &TaskFunction_bpath);
+
+	Task<BPath> task9("test_bpath", BMessenger(this), &TaskFunction_bpath);
 	task9.Run();
-	
-	Task<BPath> task10("test_void", new BMessenger(this), &TaskFunction_void);
+
+	Task<BPath> task10("test_void", BMessenger(this), &TaskFunction_void);
 	task10.Run();
 	
-	Task<BPath> task11("test_int_exception", new BMessenger(this), &TaskFunction_int_exception);
+	Task<BPath> task11("test_int_exception", BMessenger(this), &TaskFunction_int_exception);
 	task11.Run();
 	
 }
