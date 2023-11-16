@@ -78,11 +78,11 @@ namespace Genio::Task {
 		TaskResult() {}
 
 		TaskResult(const BMessage &archive)
-			: fResult(nullptr)
+			:
+			fResult(nullptr),
+			fId(-1)
 		{
 			type_code type;
-			void *result;
-
 			if constexpr (std::is_void<ResultType>::value == false) {
 				if (archive.GetInfo(kResultField, &type) == B_OK) {
 					ssize_t size = 0;
