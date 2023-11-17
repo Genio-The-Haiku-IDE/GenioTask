@@ -14,6 +14,8 @@
 #include <Message.h>
 #include <Messenger.h>
 #include <String.h>
+#include "GMessage.h"
+
 
 namespace Genio::Task {
 
@@ -35,38 +37,6 @@ namespace Genio::Task {
 
 		static exception_ptr current_exception_ptr;
 		static map<thread_id, exception_ptr> TaskExceptionMap;
-		static map<string, type_code> TypeMap = {
-			{typeid(BAlignment).name(), B_ALIGNMENT_TYPE},
-			{typeid(BRect).name(), B_RECT_TYPE},
-			{typeid(BPoint).name(), B_POINT_TYPE},
-			{typeid(BSize).name(), B_SIZE_TYPE},
-			{typeid(const char *).name(), B_STRING_TYPE},
-			{typeid(BString).name(), B_STRING_TYPE},
-			{typeid(std::string).name(), B_STRING_TYPE},
-			// {typeid(BStringList).name(), B_STRING_LIST_TYPE},
-			{typeid(int8).name(), B_INT8_TYPE},
-			{typeid(int16).name(), B_INT16_TYPE},
-			{typeid(int32).name(), B_INT32_TYPE},
-			{typeid(int64).name(), B_INT64_TYPE},
-			{typeid(uint8).name(), B_UINT8_TYPE},
-			{typeid(uint16).name(), B_UINT16_TYPE},
-			{typeid(uint32).name(), B_UINT32_TYPE},
-			{typeid(uint64).name(), B_UINT64_TYPE},
-			{typeid(bool).name(), B_BOOL_TYPE},
-			{typeid(float).name(), B_FLOAT_TYPE},
-			{typeid(double).name(), B_DOUBLE_TYPE},
-			{typeid(rgb_color).name(), B_RGB_COLOR_TYPE},
-			{typeid(const void *).name(), B_POINTER_TYPE},
-			{typeid(BMessenger).name(), B_MESSENGER_TYPE},
-			{typeid(entry_ref).name(), B_REF_TYPE},
-			{typeid(node_ref).name(), B_NODE_REF_TYPE},
-			{typeid(BMessage).name(), B_MESSAGE_TYPE},
-		};
-
-		template <typename T>
-		struct BMessageType {
-			static type_code Get() { return TypeMap[typeid(T).name()]; }
-		};
 	}
 
 	using namespace Private;
@@ -94,12 +64,20 @@ namespace Genio::Task {
 			if constexpr (std::is_void<ResultType>::value == false) {
 				type_code type;
 				if (archive.GetInfo(kResultField, &type) == B_OK) {
-					ssize_t size = 0;
-					const void *result;
-					status_t error = archive.FindData(kResultField, type,
+
+					printf("OUTPUT: "); archive.PrintToStream();
+
+					if constexpr ( MessageValue<ResultType>::Type() == B_ANY_TYPE) {
+						ssize_t size = 0;
+						const void *result;
+						status_t error = archive.FindData(kResultField, type,
 						reinterpret_cast<const void**>(&result), &size);
-					if (error == B_OK) {
-						fResult = *reinterpret_cast<const ResultType*>(result);
+						if (error == B_OK) {
+                           fResult = *reinterpret_cast<const ResultType*>(result);
+						}
+					} else {
+						BMSG(&archive, garchive);
+						fResult = (ResultType)garchive[kResultField];
 					}
 				}
 			}
@@ -138,9 +116,13 @@ namespace Genio::Task {
 
 			if constexpr (std::is_void<ResultType>::value == false) {
 				if (fResult.has_value()) {
-					type_code type = BMessageType<ResultType>::Get();
 					ResultType result = any_cast<ResultType>(fResult);
-					status = archive->AddData(kResultField, type, &result, sizeof(ResultType));
+					if constexpr ( MessageValue<ResultType>::Type() == B_ANY_TYPE) {
+						status = archive->AddData(kResultField, B_ANY_TYPE, &result, sizeof(ResultType));
+					} else {
+						BMSG(archive, garchive);
+						garchive[kResultField] = result;
+					}
 				}
 			}
 			if (status != B_OK)
@@ -152,6 +134,9 @@ namespace Genio::Task {
 			if (status != B_OK)
 				return status;
 			status = archive->AddString("class", "TaskResult");
+
+			printf("INPUT: "); archive->PrintToStream();
+
 			return status;
 		}
 
