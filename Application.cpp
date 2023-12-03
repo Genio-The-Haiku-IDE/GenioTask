@@ -107,11 +107,11 @@ void MainApp::ReadyToRun() {
 	Task<test_struct> task1("test_struct", BMessenger(this), TaskFunction_test_struct);
 	task1.Run();
 #endif
-#if 1
+#if 0
 	Task<shared_ptr<test_struct>> task2("test_shared_ptr", BMessenger(this), TaskFunction_SharedPtr);
 	task2.Run();
 #endif
-#if 1
+#if 0
 	Task<std::filesystem::path *> task3("test_path", BMessenger(this), &TaskFunction_std_path);
 	task3.Run();
 #endif
