@@ -65,7 +65,7 @@ namespace Genio::Task {
 				type_code type;
 				if (archive.GetInfo(kResultField, &type) == B_OK) {
 
-					printf("OUTPUT: "); archive.PrintToStream();
+					// printf("OUTPUT: \n"); archive.PrintToStream(); printf("\n");
 
 					if constexpr ( MessageValue<ResultType>::Type() == B_ANY_TYPE) {
 						ssize_t size = 0;
@@ -90,7 +90,11 @@ namespace Genio::Task {
 			}
 		}
 
-		~TaskResult() {}
+		~TaskResult()
+		{
+			fResult.reset();
+			printf("~TaskResult(): %s\n", fName.String());
+		}
 
 		ResultType	GetResult() const
 		{
@@ -135,7 +139,7 @@ namespace Genio::Task {
 				return status;
 			status = archive->AddString("class", "TaskResult");
 
-			printf("INPUT: "); archive->PrintToStream();
+			// printf("INPUT: \n"); archive->PrintToStream(); printf("\n");
 
 			return status;
 		}
@@ -227,7 +231,6 @@ namespace Genio::Task {
 			} catch (...) {
 				TaskExceptionMap[data->id] = current_exception();
 			}
-
 			TaskResult<ResultType> taskResult(data->name, anyResult, data->id);
 			BMessenger messenger = data->messenger;
 

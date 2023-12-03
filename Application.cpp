@@ -25,6 +25,8 @@ struct test_struct {
 	test_struct(string _str, int32 _val) { str = _str; val = _val; }
 };
 
+shared_ptr<test_struct> sp;
+
 test_struct TaskFunction_test_struct()
 {
 	cout << "TaskFunction_test_struct()" << endl;
@@ -34,7 +36,8 @@ test_struct TaskFunction_test_struct()
 auto TaskFunction_SharedPtr()
 {
 	cout << "TaskFunction_SharedPtr()" << endl;
-	return make_shared<test_struct>(string_test.String(), int_test);
+	shared_ptr<void> p = make_shared<test_struct>(string_test.String(), int_test);
+	return p;
 }
 
 auto TaskFunction_std_path()
@@ -107,38 +110,46 @@ void MainApp::ReadyToRun() {
 	Task<test_struct> task1("test_struct", BMessenger(this), TaskFunction_test_struct);
 	task1.Run();
 #endif
-#if 0
-	Task<shared_ptr<test_struct>> task2("test_shared_ptr", BMessenger(this), TaskFunction_SharedPtr);
+#if 1
+	Task<std::shared_ptr<void>> task2("test_shared_ptr", BMessenger(this), TaskFunction_SharedPtr);
 	task2.Run();
 #endif
-#if 1
+#if 0
 	Task<std::filesystem::path *> task3("test_path", BMessenger(this), &TaskFunction_std_path);
 	task3.Run();
 #endif
+#if 1
 	Task<bool> task4("test_bool", BMessenger(this), &TaskFunction_bool);
 	task4.Run();
-
+#endif
+#if 1
 	Task<int32> task5("test_int32", BMessenger(this), TaskFunction_int32);
 	task5.Run();
-
+#endif
+#if 1
 	Task<double> task6("test_double", BMessenger(this), TaskFunction_double);
 	task6.Run();
-
+#endif
+#if 1
 	Task<BString> task7("test_bstring", BMessenger(this), TaskFunction_BString);
 	task7.Run();
-
+#endif
+#if 1
 	Task<test_struct*> task8("test_pointer", BMessenger(this), TaskFunction_Pointer);
 	task8.Run();
-
+#endif
+#if 1
 	Task<BPath> task9("test_bpath", BMessenger(this), &TaskFunction_bpath);
 	task9.Run();
-
+#endif
+#if 1
 	Task<BPath> task10("test_void", BMessenger(this), &TaskFunction_void);
 	task10.Run();
-
+#endif
+#if 1
 	Task<BPath> task11("test_int_exception", BMessenger(this), &TaskFunction_int_exception);
 	task11.Run();
-
+#endif
 }
 
 void MainApp::MessageReceived(BMessage* msg) {
@@ -192,8 +203,8 @@ void MainApp::MessageReceived(BMessage* msg) {
 					delete task_result;
 				}
 				if (task_name=="test_shared_ptr") {
-					auto task_result = TaskResult<shared_ptr<test_struct>>::Instantiate(msg);
-					auto result = task_result->GetResult();
+					auto task_result = TaskResult<shared_ptr<void>>::Instantiate(msg);
+					auto result = reinterpret_pointer_cast<test_struct>(task_result->GetResult());
 					cout << task_name << " - Name: " << task_result->GetTaskName() << endl;
 					cout << task_name << " - ID: " << task_result->GetTaskID() << endl;
 					cout << task_name << " - Type: " << "Type:" << typeid(result).name() << endl;
@@ -202,7 +213,7 @@ void MainApp::MessageReceived(BMessage* msg) {
 						cout << "Test passed!" << endl;
 					else
 						cout << "Test failed!" << endl;
-					delete task_result;
+					sp = result;
 				}
 				if (task_name=="test_bool") {
 					auto task_result = TaskResult<bool>::Instantiate(msg);
@@ -311,6 +322,8 @@ void MainApp::MessageReceived(BMessage* msg) {
 		}
 		break;
 		default:
+		{
 			BApplication::MessageReceived(msg);
+		}
 	}
 }
