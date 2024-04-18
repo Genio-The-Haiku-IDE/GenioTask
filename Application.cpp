@@ -7,6 +7,7 @@
 
 #include "Application.h"
 #include "Task.h"
+#include "TaskRoster.h"
 
 using namespace std;
 using namespace std::filesystem;
@@ -146,10 +147,16 @@ void MainApp::ReadyToRun() {
 	Task<BPath> task10("test_void", BMessenger(this), &TaskFunction_void);
 	task10.Run();
 #endif
-#if 1
+#if 0
 	Task<BPath> task11("test_int_exception", BMessenger(this), &TaskFunction_int_exception);
 	task11.Run();
 #endif
+
+	TaskRoster* roster = TaskRoster::Get();
+	for (int32 i = 0; i < roster->CountTasks(); i++) {
+		TaskDescriptor* task = roster->TaskAt(i);
+		task->PrintToStream();
+	}
 }
 
 void MainApp::MessageReceived(BMessage* msg) {

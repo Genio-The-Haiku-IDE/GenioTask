@@ -14,7 +14,9 @@
 #include <Message.h>
 #include <Messenger.h>
 #include <String.h>
+
 #include "GMessage.h"
+#include "TaskRoster.h"
 
 
 namespace Genio::Task {
@@ -194,6 +196,9 @@ namespace Genio::Task {
 				delete threadData;
 				throw runtime_error("Can't create task");
 			}
+
+			TaskDescriptor* descriptor = new TaskDescriptor(name, fThreadHandle);
+			TaskRoster::Get()->AddTask(descriptor);
 		}
 
 		~Task() {}
@@ -217,6 +222,10 @@ namespace Genio::Task {
 		static int32 _CallTarget(void *target)
 		{
 			Data *data = reinterpret_cast<Data*>(target);
+
+			TaskDescriptor* descriptor = TaskRoster::Get()->TaskByThreadID(data->id);
+			descriptor->status = TaskDescriptor::STATUS_RUNNING;
+
 			Lambda* lambda = reinterpret_cast<Lambda*>(data->target_function);
 			std::any anyResult;
 			try {
@@ -236,6 +245,8 @@ namespace Genio::Task {
 
 			delete lambda;
 			delete data;
+
+			descriptor->status = TaskDescriptor::STATUS_STOPPED;
 
 			BMessage msg(TASK_RESULT_MESSAGE);
 			if (taskResult.Archive(&msg, false) == B_OK) {
