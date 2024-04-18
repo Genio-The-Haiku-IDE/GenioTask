@@ -52,6 +52,11 @@ TaskRoster::TaskByThreadID(thread_id id) const
 TaskDescriptor*
 TaskRoster::TaskByName(const char* name) const
 {
+	std::vector<TaskDescriptor*>::const_iterator i;
+	for (i = fTasks.begin(); i != fTasks.end(); i++) {
+		if ((*i)->name == name)
+			return *i;
+	}
 	return nullptr;
 }
 
@@ -82,7 +87,6 @@ TaskDescriptor::PrintToStream()
 		std::cout << "RUNNING" << std::endl;
 	else if (status == STATUS_STOPPED)
 		std::cout << "STOPPED" << std::endl;
-
 }
 
 
