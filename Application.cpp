@@ -1,13 +1,16 @@
-#include <any>
 #include <filesystem>
 #include <iostream>
 #include <memory>
 
+#include <LayoutBuilder.h>
 #include <Path.h>
+#include <Window.h>
 
 #include "Application.h"
 #include "Task.h"
 #include "TaskRoster.h"
+#include "TaskView.h"
+
 
 using namespace std;
 using namespace std::filesystem;
@@ -96,6 +99,19 @@ int32 TaskFunction_int_exception()
 	return int_test;
 }
 
+class Window : public BWindow {
+public:
+	Window()
+	:
+	BWindow(BRect(30, 30, 400, 400), "Task window", B_TITLED_WINDOW, B_ASYNCHRONOUS_CONTROLS |
+												B_QUIT_ON_WINDOW_CLOSE)
+	{
+		BLayoutBuilder::Group<>(this, B_VERTICAL, 0.0f)
+			.Add(new TaskView());
+	}
+};
+
+
 MainApp::MainApp()
 	: BApplication ("application/x-vnd.genio-task")
 {
@@ -106,6 +122,9 @@ MainApp::~MainApp()
 }
 
 void MainApp::ReadyToRun() {
+
+	(new Window())->Show();
+	snooze(5000000);
 	cout << "ReadyToRun()" << endl;
 #if 1
 	Task<test_struct> task1("test_struct", BMessenger(this), TaskFunction_test_struct);
@@ -152,11 +171,6 @@ void MainApp::ReadyToRun() {
 	task11.Run();
 #endif
 
-	TaskRoster* roster = TaskRoster::Get();
-	for (int32 i = 0; i < roster->CountTasks(); i++) {
-		TaskDescriptor* task = roster->TaskAt(i);
-		task->PrintToStream();
-	}
 }
 
 void MainApp::MessageReceived(BMessage* msg) {
